@@ -1,0 +1,2387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Demo Sàng Lọc Sớm Phổ Tự Kỷ - Gaze • Emotion • Behavior</title>
+    <style>
+        :root {
+            --bg-gradient: radial-gradient(120% 120% at 10% 0%, #1f2937 0%, #0f172a 55%, #020617 100%);
+            --panel-bg: rgba(15, 23, 42, 0.72);
+            --card-bg: rgba(15, 23, 42, 0.88);
+            --accent: #38bdf8;
+            --accent-strong: #0ea5e9;
+            --accent-soft: rgba(56, 189, 248, 0.14);
+            --success: #22c55e;
+            --warning: #f97316;
+            --danger: #ef4444;
+            --text-primary: #f8fafc;
+            --text-secondary: #cbd5f5;
+            --border-soft: rgba(148, 163, 184, 0.2);
+            --shadow-lg: 0 20px 45px rgba(2, 6, 23, 0.6);
+            font-family: "Inter", "Segoe UI", sans-serif;
+        }
+
+        *, *::before, *::after {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background: var(--bg-gradient);
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+
+        .page {
+            max-width: 1480px;
+            margin: 0 auto;
+            padding: 36px 32px 96px;
+        }
+
+        .hero {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.35), rgba(34, 211, 238, 0.12));
+            border: 1px solid rgba(191, 219, 254, 0.26);
+            border-radius: 28px;
+            padding: 40px 48px;
+            box-shadow: var(--shadow-lg);
+            margin-bottom: 28px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle at 70% -10%, rgba(14, 165, 233, 0.3), transparent 55%);
+            pointer-events: none;
+        }
+
+        .hero h1 {
+            margin: 0;
+            font-size: clamp(2.25rem, 4vw, 3rem);
+            letter-spacing: -0.02em;
+        }
+
+        .hero p {
+            margin-top: 12px;
+            max-width: 720px;
+            color: var(--text-secondary);
+            font-size: 1.05rem;
+        }
+
+        .stepper {
+            display: flex;
+            gap: 18px;
+            margin-top: 28px;
+            flex-wrap: wrap;
+        }
+
+        .step {
+            flex: 1;
+            min-width: 200px;
+            display: flex;
+            gap: 14px;
+            align-items: center;
+            padding: 18px 20px;
+            border-radius: 18px;
+            background: rgba(15, 23, 42, 0.55);
+            border: 1px solid rgba(148, 163, 184, 0.25);
+            box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.3);
+            transition: transform 0.25s ease, border-color 0.25s ease, background 0.25s ease;
+        }
+
+        .step.is-active {
+            border-color: rgba(56, 189, 248, 0.8);
+            background: rgba(14, 116, 144, 0.28);
+            transform: translateY(-3px);
+        }
+
+        .step.is-done {
+            border-color: rgba(34, 197, 94, 0.7);
+            background: rgba(34, 197, 94, 0.12);
+        }
+
+        .step.is-error {
+            border-color: rgba(239, 68, 68, 0.6);
+            background: rgba(239, 68, 68, 0.12);
+        }
+
+        .step-index {
+            width: 32px;
+            height: 32px;
+            border-radius: 12px;
+            display: grid;
+            place-items: center;
+            background: rgba(148, 163, 184, 0.25);
+            font-weight: 600;
+        }
+
+        .step.is-active .step-index {
+            background: rgba(56, 189, 248, 0.25);
+            color: #bae6fd;
+        }
+
+        .step.is-done .step-index {
+            background: rgba(34, 197, 94, 0.3);
+            color: #bbf7d0;
+        }
+
+        .step-title {
+            font-size: 1rem;
+            margin: 0;
+            font-weight: 600;
+        }
+
+        .step-subtitle {
+            margin: 0;
+            font-size: 0.85rem;
+            color: rgba(226, 232, 240, 0.75);
+        }
+
+        .layout {
+            display: grid;
+            grid-template-columns: 1.6fr 1fr;
+            gap: 26px;
+        }
+
+        .stage {
+            background: var(--panel-bg);
+            border-radius: 24px;
+            padding: 26px;
+            border: 1px solid var(--border-soft);
+            box-shadow: var(--shadow-lg);
+            position: relative;
+        }
+
+        .stage h2 {
+            margin-top: 0;
+            font-size: 1.4rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .video-shell {
+            position: relative;
+            border-radius: 22px;
+            overflow: hidden;
+            background: rgba(15, 23, 42, 0.65);
+            border: 1px solid rgba(148, 163, 184, 0.18);
+            min-height: 360px;
+        }
+
+        #videoFeed,
+        #calibrationCanvas,
+        #gazeCanvas {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        #videoFeed {
+            background: radial-gradient(circle at center, rgba(30, 64, 175, 0.25), rgba(15, 23, 42, 0.95));
+        }
+
+        #calibrationCanvas,
+        #gazeCanvas {
+            pointer-events: none;
+        }
+
+        .permission-overlay {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(15, 23, 42, 0.82), rgba(15, 23, 42, 0.52));
+            display: grid;
+            place-items: center;
+            text-align: center;
+            padding: 32px;
+            gap: 16px;
+        }
+
+        .permission-overlay h2 {
+            margin: 0;
+            font-size: 1.8rem;
+        }
+
+        .permission-overlay p {
+            margin: 0;
+            color: rgba(226, 232, 240, 0.75);
+        }
+
+        .status-badge {
+            position: absolute;
+            top: 18px;
+            left: 18px;
+            padding: 6px 14px;
+            border-radius: 999px;
+            font-size: 0.82rem;
+            letter-spacing: 0.02em;
+            background: rgba(15, 23, 42, 0.75);
+            border: 1px solid rgba(148, 163, 184, 0.35);
+        }
+
+        .status-badge.is-live {
+            background: rgba(34, 197, 94, 0.16);
+            border-color: rgba(34, 197, 94, 0.45);
+            color: #bbf7d0;
+        }
+
+        .status-badge.is-paused {
+            background: rgba(234, 179, 8, 0.18);
+            border-color: rgba(250, 204, 21, 0.45);
+            color: #facc15;
+        }
+
+        .hud {
+            margin-top: 22px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 14px;
+        }
+
+        .hud-item {
+            background: rgba(15, 23, 42, 0.62);
+            border-radius: 16px;
+            padding: 16px 18px;
+            border: 1px solid rgba(148, 163, 184, 0.2);
+        }
+
+        .hud-label {
+            display: block;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            color: rgba(148, 163, 184, 0.8);
+        }
+
+        .hud-value {
+            display: block;
+            margin-top: 6px;
+            font-size: 1.4rem;
+            font-weight: 600;
+        }
+
+        .control-panel {
+            display: grid;
+            gap: 18px;
+            align-content: start;
+        }
+
+        .panel-card {
+            background: var(--card-bg);
+            border-radius: 22px;
+            padding: 22px 24px;
+            border: 1px solid var(--border-soft);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .panel-card header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 14px;
+        }
+
+        .panel-card h3 {
+            margin: 0;
+            font-size: 1.1rem;
+        }
+
+        .chip {
+            padding: 5px 12px;
+            border-radius: 999px;
+            font-size: 0.78rem;
+            letter-spacing: 0.05em;
+            border: 1px solid transparent;
+            background: rgba(148, 163, 184, 0.25);
+            color: rgba(226, 232, 240, 0.85);
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+
+        .chip-active {
+            background: rgba(56, 189, 248, 0.18);
+            border-color: rgba(56, 189, 248, 0.45);
+            color: #bae6fd;
+        }
+
+        .chip-success {
+            background: rgba(34, 197, 94, 0.2);
+            border-color: rgba(34, 197, 94, 0.45);
+            color: #bbf7d0;
+        }
+
+        .chip-warning {
+            background: rgba(234, 179, 8, 0.18);
+            border-color: rgba(250, 204, 21, 0.45);
+            color: #fde047;
+        }
+
+        .chip-error {
+            background: rgba(239, 68, 68, 0.2);
+            border-color: rgba(239, 68, 68, 0.5);
+            color: #fecdd3;
+        }
+
+        .panel-card p {
+            margin: 0 0 18px;
+            color: rgba(203, 213, 225, 0.8);
+            font-size: 0.95rem;
+        }
+
+        .btn {
+            appearance: none;
+            border: none;
+            border-radius: 14px;
+            padding: 12px 16px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn:disabled {
+            opacity: 0.55;
+            cursor: not-allowed;
+            box-shadow: none;
+            transform: none;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+            color: #0c1322;
+            box-shadow: 0 12px 24px rgba(14, 165, 233, 0.35);
+        }
+
+        .btn-primary:not(:disabled):hover {
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: rgba(148, 163, 184, 0.16);
+            border: 1px solid rgba(148, 163, 184, 0.4);
+            color: #e2e8f0;
+        }
+
+        .btn-neutral {
+            background: rgba(59, 130, 246, 0.2);
+            border: 1px solid rgba(59, 130, 246, 0.35);
+            color: #bfdbfe;
+        }
+
+        .btn-danger {
+            background: rgba(239, 68, 68, 0.25);
+            border: 1px solid rgba(239, 68, 68, 0.45);
+            color: #fecdd3;
+        }
+
+        .button-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .progress {
+            height: 8px;
+            width: 100%;
+            background: rgba(148, 163, 184, 0.16);
+            border-radius: 999px;
+            overflow: hidden;
+            margin-bottom: 12px;
+        }
+
+        .progress-bar {
+            height: 100%;
+            width: 0;
+            background: linear-gradient(90deg, var(--accent), #60a5fa);
+            transition: width 0.25s ease;
+        }
+
+        .analytics {
+            margin-top: 36px;
+            background: var(--panel-bg);
+            border-radius: 24px;
+            border: 1px solid var(--border-soft);
+            padding: 28px;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .analytics h2 {
+            margin: 0 0 24px;
+            font-size: 1.35rem;
+        }
+
+        .metric-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 20px;
+        }
+
+        .metric-card {
+            background: rgba(15, 23, 42, 0.75);
+            border-radius: 20px;
+            padding: 20px 22px;
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .metric-card.metric-wide {
+            grid-column: 1 / -1;
+        }
+
+        .metric-title {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: rgba(148, 163, 184, 0.7);
+        }
+
+        .metric-value {
+            font-size: 2rem;
+            font-weight: 700;
+        }
+
+        .metric-subtext {
+            font-size: 0.85rem;
+            color: rgba(203, 213, 225, 0.75);
+        }
+
+        .logs {
+            margin-top: 30px;
+            background: rgba(15, 23, 42, 0.72);
+            border-radius: 24px;
+            padding: 26px;
+            border: 1px solid var(--border-soft);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .log-stream {
+            max-height: 220px;
+            overflow-y: auto;
+            font-family: "JetBrains Mono", "SFMono-Regular", monospace;
+            background: rgba(2, 6, 23, 0.6);
+            border-radius: 18px;
+            padding: 18px;
+            border: 1px solid rgba(148, 163, 184, 0.16);
+            color: rgba(191, 210, 255, 0.88);
+            font-size: 0.85rem;
+            line-height: 1.5;
+        }
+
+        .log-entry {
+            margin-bottom: 8px;
+            white-space: pre-wrap;
+        }
+
+        .log-entry:last-child {
+            margin-bottom: 0;
+        }
+
+        .log-success { color: #4ade80; }
+        .log-warn { color: #facc15; }
+        .log-error { color: #fda4af; }
+        .log-trace { color: rgba(148, 163, 184, 0.7); }
+
+        .config-card input {
+            width: 100%;
+            padding: 11px 14px;
+            border-radius: 12px;
+            border: 1px solid rgba(148, 163, 184, 0.4);
+            background: rgba(2, 6, 23, 0.6);
+            color: var(--text-primary);
+            font-size: 0.95rem;
+            margin-bottom: 12px;
+        }
+
+        .config-card small {
+            display: block;
+            color: rgba(203, 213, 225, 0.65);
+            font-size: 0.8rem;
+        }
+
+        @media (max-width: 1200px) {
+            .layout {
+                grid-template-columns: 1fr;
+            }
+
+            .control-panel {
+                grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            }
+        }
+
+        @media (max-width: 768px) {
+            .page {
+                padding: 28px 18px 72px;
+            }
+
+            .hero {
+                padding: 32px 24px;
+            }
+
+            .stepper {
+                gap: 12px;
+            }
+
+            .stage, .analytics, .logs {
+                padding: 22px;
+            }
+
+            .permission-overlay h2 {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="page">
+        <header class="hero">
+            <h1 id="heroTitle" data-i18n="hero_title">Hệ thống hỗ trợ sàng lọc sớm phổ tự kỷ</h1>
+            <p id="heroDesc" data-i18n="hero_desc">
+                Demo hợp nhất ba mô-đun: giao tiếp mắt (gaze), nhận diện cảm xúc (emotion) và theo dõi hành vi (behavior) để tạo chỉ số nguy cơ (Risk Index). Công cụ mang tính hỗ trợ sớm, <strong>không thay thế chẩn đoán lâm sàng</strong>. Thực hiện tuần tự: cấp quyền camera → hiệu chỉnh → theo dõi liên tục → phân tích cảm xúc/hành vi → tổng hợp sàng lọc.
+            </p>
+            <div class="stepper">
+                <div class="step is-active" data-step="camera">
+                    <span class="step-index">1</span>
+                    <div>
+                        <p class="step-title" data-i18n="step1_title">Quyền camera</p>
+                        <p class="step-subtitle" data-i18n="step1_sub">Xin quyền & tạo phiên</p>
+                    </div>
+                </div>
+                <div class="step" data-step="calibrate">
+                    <span class="step-index">2</span>
+                    <div>
+                        <p class="step-title" data-i18n="step2_title">Hiệu chỉnh</p>
+                        <p class="step-subtitle" data-i18n="step2_sub">Ghi nhận 5 điểm chuẩn</p>
+                    </div>
+                </div>
+                <div class="step" data-step="track">
+                    <span class="step-index">3</span>
+                    <div>
+                        <p class="step-title" data-i18n="step3_title">Theo dõi liên tục</p>
+                        <p class="step-subtitle" data-i18n="step3_sub">Giao tiếp mắt thời gian thực</p>
+                    </div>
+                </div>
+                <div class="step" data-step="analyze">
+                    <span class="step-index">4</span>
+                    <div>
+                        <p class="step-title" data-i18n="step4_title">Tổng hợp sàng lọc</p>
+                        <p class="step-subtitle" data-i18n="step4_sub">Chỉ số nguy cơ & gợi ý</p>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <main class="layout">
+            <section class="stage">
+                <h2>📹 Live camera & overlays</h2>
+                <div class="video-shell">
+                    <video id="videoFeed" playsinline autoplay muted></video>
+                    <canvas id="calibrationCanvas"></canvas>
+                    <canvas id="gazeCanvas"></canvas>
+                    <div class="permission-overlay" id="permissionOverlay">
+                        <div>
+                            <h2>Cho phép sử dụng camera để bắt đầu</h2>
+                            <p>
+                                Bấm "Start setup" và chọn <strong>Allow</strong> khi trình duyệt hỏi quyền truy cập camera. Nếu mất kết nối, bạn có thể khởi động lại bất kỳ lúc nào.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="status-badge" id="trackingBadge">Idle</div>
+                </div>
+                <div class="hud">
+                    <div class="hud-item">
+                        <span class="hud-label">Frames processed</span>
+                        <span class="hud-value" id="hudFrames">0</span>
+                    </div>
+                    <div class="hud-item">
+                        <span class="hud-label">Session time</span>
+                        <span class="hud-value" id="hudDuration">00:00</span>
+                    </div>
+                </div>
+            </section>
+
+            <aside class="control-panel">
+                <div class="panel-card" id="centeringPanel">
+                    <header>
+                        <h3>Centering analysis</h3>
+                        <span class="chip" id="centeringChip">Idle</span>
+                    </header>
+                    <p id="centeringStatusText">Đánh giá nhanh vị trí khuôn mặt so với Golden Zone (1 frame từ webcam).</p>
+                    <div class="button-row">
+                        <button class="btn btn-primary" id="runCenteringBtn">Check centering</button>
+                    </div>
+                    <p class="metric-subtext" id="centeringResultText" style="margin-top:10px;">Chưa có kết quả.</p>
+                    <div style="margin-top:12px; padding-top:12px; border-top:1px solid var(--border-soft);">
+                        <span class="metric-title">Most frequent position</span>
+                        <div style="margin-top:6px;">
+                            <span class="metric-subtext" id="centeringTopText">--</span>
+                        </div>
+                        <div style="margin-top:6px;">
+                            <span class="metric-subtext" id="centeringDistText">--</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="panel-card">
+                    <header>
+                        <h3>Language & locale</h3>
+                        <span class="chip" id="languageChip">vie</span>
+                    </header>
+                    <p>Chọn ngôn ngữ để backend tạo insight và nhãn kết quả theo lựa chọn của bạn.</p>
+                    <div class="button-row" style="gap:12px; align-items:center;">
+                        <label for="languageSelect" class="metric-subtext" style="min-width:140px;">Select language</label>
+                        <select id="languageSelect" style="padding:10px 12px; border-radius:12px; background:rgba(2,6,23,0.6); color:#f8fafc; border:1px solid rgba(148,163,184,0.4);">
+                            <option value="vie" selected>Tiếng Việt (vie)</option>
+                            <option value="eng">English (eng)</option>
+                        </select>
+                    </div>
+                    <small>Ngôn ngữ áp dụng khi khởi tạo session. Nếu đổi ngôn ngữ, hãy Start setup lại để áp dụng.</small>
+                </div>
+                <div class="panel-card">
+                    <header>
+                        <h3>Camera setup</h3>
+                        <span class="chip" id="cameraStatusChip">Idle</span>
+                    </header>
+                    <p id="cameraStatusText">Bấm “Start setup” để xin quyền camera và tạo session mới.</p>
+                    <div class="button-row">
+                        <button class="btn btn-primary" id="startSetupBtn">Start setup</button>
+                        <button class="btn btn-secondary" id="resetBtn">Reset session</button>
+                    </div>
+                </div>
+
+                <div class="panel-card">
+                    <header>
+                        <h3>Calibration</h3>
+                        <span class="chip" id="calibrationStatusChip">Ready</span>
+                    </header>
+                    <p id="calibrationStatusText">Sau khi xin quyền camera thành công, chạy hiệu chỉnh với 5 điểm hiển thị trên màn hình.</p>
+                    <div class="progress">
+                        <div class="progress-bar" id="calibrationProgressBar"></div>
+                    </div>
+                    <p class="metric-subtext" id="calibrationProgressLabel">0 / 5 points captured</p>
+                    <div class="button-row">
+                        <button class="btn btn-neutral" id="calibrationBtn" disabled>Start calibration</button>
+                        <button class="btn btn-secondary" id="recalibrateBtn" disabled>Recalibrate</button>
+                    </div>
+                </div>
+
+                <div class="panel-card">
+                    <header>
+                        <h3>Live tracking</h3>
+                        <span class="chip" id="trackingStatusChip">Idle</span>
+                    </header>
+                    <p id="trackingStatusText">Khởi động theo dõi sau khi hiệu chỉnh. Có thể tạm dừng nếu bạn cần nghỉ.</p>
+                    <div class="button-row">
+                        <button class="btn btn-primary" id="startTrackingBtn" disabled>Start tracking</button>
+                        <button class="btn btn-secondary" id="pauseTrackingBtn" disabled>Pause tracking</button>
+                        <button class="btn btn-danger" id="stopTrackingBtn" disabled>Stop</button>
+                    </div>
+                    <div class="button-row" style="margin-top: 10px;">
+                        <button class="btn btn-neutral" id="fetchSummaryBtn" disabled>Get summary</button>
+                    </div>
+                </div>
+
+                <div class="panel-card" id="emotionPanel">
+                    <header>
+                        <h3>Emotion analysis</h3>
+                        <span class="chip" id="emotionStatusChip">Idle</span>
+                    </header>
+                    <p id="emotionStatusText">Chụp 1 khung hình từ webcam và phân tích cảm xúc (DeepFace + LLM insight).</p>
+                    <div class="button-row">
+                        <button class="btn btn-primary" id="runEmotionBtn">Analyze emotion (1 frame)</button>
+                    </div>
+                    <div style="margin-top:12px; padding-top:12px; border-top:1px solid var(--border-soft);">
+                        <span class="metric-title">Dominant emotion</span>
+                        <div class="metric-subtext" id="emotionDominant">--</div>
+                    </div>
+                    <div style="margin-top:12px;">
+                        <span class="metric-title">Scores</span>
+                        <div class="metric-subtext" id="emotionScores">--</div>
+                    </div>
+                    <div style="margin-top:12px;">
+                        <span class="metric-title">AI insight</span>
+                        <div class="metric-subtext" id="emotionInsight">--</div>
+                    </div>
+                </div>
+
+                <div class="panel-card" id="behaviorPanel">
+                    <header>
+                        <h3>Behavior analysis</h3>
+                        <span class="chip" id="behaviorStatusChip">Idle</span>
+                    </header>
+                    <p id="behaviorStatusText">Chụp 1 khung hình từ webcam và phân tích hành vi (pose skeleton + model + insight). Không cần upload file .npy hay video.</p>
+                    <div class="button-row">
+                        <button class="btn btn-primary" id="runBehaviorAnalyzeBtn">Analyze behavior (1 frame)</button>
+                    </div>
+                    <div style="margin-top:12px; padding-top:12px; border-top:1px solid var(--border-soft);">
+                        <span class="metric-title">Dominant behavior</span>
+                        <div class="metric-subtext" id="behaviorDominant">--</div>
+                    </div>
+                    <div style="margin-top:12px;">
+                        <span class="metric-title">IDs</span>
+                        <div class="metric-subtext" id="behaviorIds">--</div>
+                    </div>
+                    <div style="margin-top:12px;">
+                        <span class="metric-title">Scores</span>
+                        <div class="metric-subtext" id="behaviorScores">--</div>
+                    </div>
+                    <div style="margin-top:12px;">
+                        <span class="metric-title">AI insight</span>
+                        <div class="metric-subtext" id="behaviorInsight">--</div>
+                    </div>
+                </div>
+
+                <div class="panel-card" id="screeningPanel">
+                    <header>
+                        <h3 id="screeningTitle" data-i18n="screening_title">Sàng lọc sớm phổ tự kỷ</h3>
+                        <span class="chip" id="screeningStatusChip">Idle</span>
+                    </header>
+                    <p id="screeningStatusText" data-i18n="screening_desc">Hợp nhất giao tiếp mắt, cảm xúc và hành vi để tạo Risk Index hỗ trợ can thiệp sớm (không chẩn đoán).</p>
+                    <div class="button-row" style="margin-bottom:10px;">
+                        <button class="btn btn-primary" id="fetchScreeningBtn" data-i18n="btn_fetch_screening">Lấy kết quả sàng lọc</button>
+                        <button class="btn btn-secondary" id="exportScreeningPdfBtn" data-i18n="btn_export_pdf">Xuất PDF</button>
+                    </div>
+                    <div class="hud" style="grid-template-columns: repeat(auto-fit, minmax(180px,1fr));">
+                        <div class="hud-item">
+                            <span class="hud-label" data-i18n="label_risk_index">Chỉ số nguy cơ</span>
+                            <span class="hud-value" id="screeningRiskValue">--%</span>
+                        </div>
+                        <div class="hud-item">
+                            <span class="hud-label" data-i18n="label_category">Phân loại</span>
+                            <span class="hud-value" id="screeningRiskCategory">--</span>
+                        </div>
+                        <div class="hud-item">
+                            <span class="hud-label" data-i18n="label_eye_contact">Giao tiếp mắt</span>
+                            <span class="hud-value" id="screeningEyeStat">--</span>
+                        </div>
+                        <div class="hud-item">
+                            <span class="hud-label" data-i18n="label_top_emotion">Cảm xúc trội</span>
+                            <span class="hud-value" id="screeningTopEmotion">--</span>
+                        </div>
+                        <div class="hud-item">
+                            <span class="hud-label" data-i18n="label_top_behavior">Hành vi trội</span>
+                            <span class="hud-value" id="screeningTopBehavior">--</span>
+                        </div>
+                    </div>
+                    <div style="margin-top:14px;">
+                        <span class="metric-title" data-i18n="title_emotion_freq">Tần suất cảm xúc</span>
+                        <canvas id="emotionChartCanvas" height="180" style="margin-top:10px; width:100%; background:rgba(2,6,23,0.35); border:1px solid rgba(148,163,184,0.2); border-radius:10px;"></canvas>
+                        <div style="margin-top:14px;">
+                            <span class="metric-title" data-i18n="title_llm_insight">Gợi ý can thiệp sớm (LLM)</span>
+                            <div class="metric-subtext" id="screeningLlmInsight">--</div>
+                        </div>
+                        <div style="margin-top:16px; font-size:0.75rem; color:rgba(203,213,225,0.7); font-style:italic; line-height:1.4;">
+                            <span data-i18n="disclaimer">Công cụ chỉ mang tính hỗ trợ sàng lọc sớm và gợi ý hoạt động tại nhà. Không dùng để chẩn đoán chính thức. Luôn tham khảo chuyên gia nếu có nghi ngờ cao.</span>
+                        </div>
+                    </div>
+                </div>
+
+                <form class="panel-card config-card" id="apiHostForm">
+                    <header>
+                        <h3>Backend connection</h3>
+                        <span class="chip" id="backendStatusChip">Auto</span>
+                    </header>
+                    <p id="backendStatusText">Hệ thống sẽ tự khám phá API host (ưu tiên cùng domain). Nhập URL nếu bạn muốn dùng host cụ thể.</p>
+                    <input type="text" id="apiHostInput" placeholder="http:///" autocomplete="off" />
+                    <div class="button-row">
+                        <button class="btn btn-secondary" type="submit">Apply API host</button>
+                    </div>
+                    <small>Ví dụ: http://:8000/ hoặc http://localhost:8000</small>
+                </form>
+            </aside>
+        </main>
+
+        <section class="analytics">
+            <h2>📈 Eye contact analytics</h2>
+            <div class="metric-grid">
+                <div class="metric-card">
+                    <span class="metric-title">Eye contact ratio</span>
+                    <span class="metric-value" id="eyeContactRatio">--%</span>
+                    <div class="progress" style="margin-top: 8px;">
+                        <div class="progress-bar" id="eyeContactBar"></div>
+                    </div>
+                    <span class="metric-subtext">Tỷ lệ thời gian ánh mắt nằm trong vùng giao tiếp</span>
+                </div>
+                <div class="metric-card">
+                    <span class="metric-title">Glance out count</span>
+                    <span class="metric-value" id="glanceCount">--</span>
+                    <span class="metric-subtext" id="gazeDistributionText">Chưa có dữ liệu</span>
+                </div>
+                <div class="metric-card">
+                    <span class="metric-title">Primary gaze direction</span>
+                    <span class="metric-value" id="mainDirection">--</span>
+                    <span class="metric-subtext">Phân tích hướng nhìn chính trong suốt phiên</span>
+                </div>
+                <div class="metric-card metric-wide">
+                    <span class="metric-title">AI insight</span>
+                    <span class="metric-subtext" id="insightText">Chạy tracking và lấy summary để nhận nhận xét chi tiết.</span>
+                </div>
+            </div>
+        </section>
+
+        <section class="logs">
+            <h2>📝 Session timeline</h2>
+            <div class="log-stream" id="logStream"></div>
+        </section>
+    </div>
+
+    <script>
+        (() => {
+            const state = {
+                mediaStream: null,
+                cameraReady: false,
+                sessionActive: false,
+                language: 'vie',
+                calibration: {
+                    total: 5,
+                    collected: 0,
+                    running: false,
+                    completed: false
+                },
+                tracking: {
+                    active: false,
+                    paused: false,
+                    loopHandle: null,
+                    startedAt: null,
+                    lastDuration: 0,
+                    lastNoFaceLog: 0
+                },
+                stats: {
+                    frames: 0
+                },
+                gazeTrail: [],
+                apiBase: null,
+                pendingHost: null,
+                centering: {
+                    loopHandle: null,
+                    enabled: true,
+                    tally: {},
+                    total: 0
+                }
+            };
+
+            const videoEl = document.getElementById('videoFeed');
+            const calibrationCanvas = document.getElementById('calibrationCanvas');
+            const gazeCanvas = document.getElementById('gazeCanvas');
+            const logStream = document.getElementById('logStream');
+
+            const API_BASE_CANDIDATES = (() => {
+                const { protocol, hostname, origin } = window.location;
+                const items = new Set();
+                if (origin && origin.startsWith('http')) items.add(origin.replace(/\/$/, ''));
+                if (hostname) {
+                    items.add(`${protocol}//${hostname}`.replace(/\/$/, ''));
+                    items.add(`${protocol}//${hostname}:8000`);
+                }
+                items.add('https://');
+                items.add('https://:8000');
+                items.add('http://:8000');
+                items.add('http://localhost:8000');
+                items.add('http://127.0.0.1:8000');
+                return Array.from(items);
+            })();
+
+            const CALIBRATION_POINTS = [
+                { label: 'Top left', x: 0.18, y: 0.22 },
+                { label: 'Top right', x: 0.82, y: 0.22 },
+                { label: 'Bottom right', x: 0.82, y: 0.78 },
+                { label: 'Bottom left', x: 0.18, y: 0.78 },
+                { label: 'Center', x: 0.5, y: 0.5 }
+            ];
+
+            const DOM = {
+                step: (key) => document.querySelector(`.step[data-step="${key}"]`),
+                chip: (id) => document.getElementById(id),
+                text: (id) => document.getElementById(id)
+            };
+
+            function wait(ms) {
+                return new Promise((resolve) => setTimeout(resolve, ms));
+            }
+
+            function formatDuration(seconds) {
+                const totalSeconds = Math.max(0, Math.floor(seconds));
+                const m = Math.floor(totalSeconds / 60).toString().padStart(2, '0');
+                const s = (totalSeconds % 60).toString().padStart(2, '0');
+                return `${m}:${s}`;
+            }
+
+            function normalizeBaseUrl(url) {
+                if (!url) return null;
+                const trimmed = url.trim();
+                if (!trimmed) return null;
+                return trimmed.replace(/\/$/, '');
+            }
+
+            function log(message, type = 'info') {
+                const entry = document.createElement('div');
+                entry.className = `log-entry log-${type}`;
+                const stamp = new Date().toLocaleTimeString();
+                const icons = {
+                    info: 'ℹ️',
+                    success: '✅',
+                    warn: '⚠️',
+                    error: '❌',
+                    trace: '🔍'
+                };
+                entry.textContent = `[${stamp}] ${icons[type] || '•'} ${message}`;
+                logStream.appendChild(entry);
+                logStream.scrollTop = logStream.scrollHeight;
+                console[type === 'error' ? 'error' : type === 'warn' ? 'warn' : 'log'](`[${type.toUpperCase()}] ${message}`);
+            }
+
+            const I18N = {
+                vie: {
+                    hero_title: 'Hệ thống hỗ trợ sàng lọc sớm phổ tự kỷ',
+                    hero_desc: 'Demo hợp nhất ba mô-đun: giao tiếp mắt (gaze), nhận diện cảm xúc (emotion) và theo dõi hành vi (behavior) để tạo chỉ số nguy cơ (Risk Index). Công cụ mang tính hỗ trợ sớm, không thay thế chẩn đoán lâm sàng. Thực hiện tuần tự: cấp quyền camera → hiệu chỉnh → theo dõi liên tục → phân tích cảm xúc/hành vi → tổng hợp sàng lọc.',
+                    step1_title: 'Quyền camera',
+                    step1_sub: 'Xin quyền & tạo phiên',
+                    step2_title: 'Hiệu chỉnh',
+                    step2_sub: 'Ghi nhận 5 điểm chuẩn',
+                    step3_title: 'Theo dõi liên tục',
+                    step3_sub: 'Giao tiếp mắt thời gian thực',
+                    step4_title: 'Tổng hợp sàng lọc',
+                    step4_sub: 'Chỉ số nguy cơ & gợi ý',
+                    screening_title: 'Sàng lọc sớm phổ tự kỷ',
+                    screening_desc: 'Hợp nhất giao tiếp mắt, cảm xúc và hành vi để tạo Risk Index hỗ trợ can thiệp sớm (không chẩn đoán).',
+                    btn_fetch_screening: 'Lấy kết quả sàng lọc',
+                    btn_export_pdf: 'Xuất PDF',
+                    label_risk_index: 'Chỉ số nguy cơ',
+                    label_category: 'Phân loại',
+                    label_eye_contact: 'Giao tiếp mắt',
+                    label_top_emotion: 'Cảm xúc trội',
+                    label_top_behavior: 'Hành vi trội',
+                    title_emotion_freq: 'Tần suất cảm xúc',
+                    title_llm_insight: 'Gợi ý can thiệp sớm (LLM)',
+                    disclaimer: 'Công cụ chỉ mang tính hỗ trợ sàng lọc sớm và gợi ý hoạt động tại nhà. Không dùng để chẩn đoán chính thức. Luôn tham khảo chuyên gia nếu có nghi ngờ cao.'
+                },
+                eng: {
+                    hero_title: 'Early Autism Screening Support System',
+                    hero_desc: 'This demo unifies gaze (eye contact), emotion recognition, and behavior tracking to compute a Risk Index. It is an early-support tool and does not replace clinical diagnosis. Steps: grant camera → calibrate → live tracking → emotion/behavior analysis → aggregated screening.',
+                    step1_title: 'Camera permission',
+                    step1_sub: 'Grant access & create session',
+                    step2_title: 'Calibration',
+                    step2_sub: 'Collect 5 reference points',
+                    step3_title: 'Continuous tracking',
+                    step3_sub: 'Real-time eye contact',
+                    step4_title: 'Aggregate screening',
+                    step4_sub: 'Risk index & guidance',
+                    screening_title: 'Early autism screening',
+                    screening_desc: 'Combine eye contact, emotions, and behaviors to build a Risk Index for early intervention (not a diagnosis).',
+                    btn_fetch_screening: 'Get screening summary',
+                    btn_export_pdf: 'Export PDF',
+                    label_risk_index: 'Risk Index',
+                    label_category: 'Category',
+                    label_eye_contact: 'Eye contact',
+                    label_top_emotion: 'Top emotion',
+                    label_top_behavior: 'Top behavior',
+                    title_emotion_freq: 'Emotion frequency',
+                    title_llm_insight: 'Early-intervention suggestions (LLM)',
+                    disclaimer: 'This tool supports early screening and at-home activities. It does not provide a clinical diagnosis. Always consult specialists for high concerns.'
+                }
+            };
+
+            function applyTranslation(lang) {
+                const dict = I18N[lang] || I18N.vie;
+                document.querySelectorAll('[data-i18n]').forEach((el) => {
+                    const key = el.getAttribute('data-i18n');
+                    if (key && typeof dict[key] === 'string') {
+                        el.innerHTML = dict[key];
+                    }
+                });
+            }
+
+            function setLanguage(lang) {
+                state.language = (lang === 'eng' ? 'eng' : 'vie');
+                const chipLabel = state.language === 'eng' ? 'ENG' : 'VIE';
+                setChip('languageChip', 'active', chipLabel);
+                applyTranslation(state.language);
+                log(`Language set to ${state.language}`, 'trace');
+            }
+
+            function setStepState(stepKey, stateValue) {
+                const el = DOM.step(stepKey);
+                if (!el) return;
+                el.classList.remove('is-active', 'is-done', 'is-error');
+                if (stateValue === 'active') el.classList.add('is-active');
+                else if (stateValue === 'done') el.classList.add('is-done');
+                else if (stateValue === 'error') el.classList.add('is-error');
+            }
+
+            function setChip(id, variant, label) {
+                const chip = DOM.chip(id);
+                if (!chip) return;
+                chip.classList.remove('chip-active', 'chip-success', 'chip-warning', 'chip-error');
+                const variantClass = {
+                    active: 'chip-active',
+                    success: 'chip-success',
+                    warning: 'chip-warning',
+                    error: 'chip-error'
+                }[variant];
+                if (variantClass) chip.classList.add(variantClass);
+                chip.textContent = label || chip.textContent;
+            }
+
+            function updateHud() {
+                DOM.text('hudFrames').textContent = state.stats.frames.toString();
+                const elapsed = state.tracking.active && state.tracking.startedAt
+                    ? (Date.now() - state.tracking.startedAt) / 1000
+                    : state.tracking.lastDuration || 0;
+                DOM.text('hudDuration').textContent = formatDuration(elapsed);
+                updateTrackingBadge();
+            }
+
+            function updateTrackingBadge() {
+                const badge = document.getElementById('trackingBadge');
+                badge.classList.remove('is-live', 'is-paused');
+                if (state.tracking.active && !state.tracking.paused) {
+                    badge.textContent = 'Tracking live';
+                    badge.classList.add('is-live');
+                } else if (state.tracking.paused) {
+                    badge.textContent = 'Tracking paused';
+                    badge.classList.add('is-paused');
+                } else {
+                    badge.textContent = 'Idle';
+                }
+            }
+
+            function updateCalibrationProgress() {
+                const percent = Math.min(100, Math.round((state.calibration.collected / state.calibration.total) * 100));
+                DOM.text('calibrationProgressBar').style.width = `${percent}%`;
+                DOM.text('calibrationProgressLabel').textContent = `${state.calibration.collected} / ${state.calibration.total} points captured`;
+            }
+
+            function resizeOverlays() {
+                const rect = videoEl.getBoundingClientRect();
+                const { devicePixelRatio = 1 } = window;
+                [calibrationCanvas, gazeCanvas].forEach((canvas) => {
+                    canvas.width = rect.width * devicePixelRatio;
+                    canvas.height = rect.height * devicePixelRatio;
+                    canvas.style.width = `${rect.width}px`;
+                    canvas.style.height = `${rect.height}px`;
+                    const ctx = canvas.getContext('2d');
+                    ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
+                });
+            }
+
+            async function ensureVideoReady() {
+                for (let attempt = 0; attempt < 20; attempt += 1) {
+                    if (videoEl.videoWidth > 0 && videoEl.videoHeight > 0) {
+                        resizeOverlays();
+                        return true;
+                    }
+                    await wait(120);
+                }
+                throw new Error('Camera feed not ready yet');
+            }
+
+            function drawCalibrationPoint(point) {
+                const ctx = calibrationCanvas.getContext('2d');
+                ctx.clearRect(0, 0, calibrationCanvas.width, calibrationCanvas.height);
+                const { width, height } = calibrationCanvas;
+                const x = point.x * width;
+                const y = point.y * height;
+
+                ctx.save();
+                ctx.fillStyle = 'rgba(14, 165, 233, 0.18)';
+                ctx.beginPath();
+                ctx.arc(x, y, 52, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.fillStyle = '#38bdf8';
+                ctx.beginPath();
+                ctx.arc(x, y, 16, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.strokeStyle = '#e0f2fe';
+                ctx.lineWidth = 4;
+                ctx.stroke();
+
+                ctx.fillStyle = '#e0f2fe';
+                ctx.font = '16px Inter';
+                ctx.textAlign = 'center';
+                ctx.fillText(`Nhìn vào điểm ${point.label}`, x, y - 36);
+                ctx.restore();
+            }
+
+            function clearCalibrationOverlay() {
+                const ctx = calibrationCanvas.getContext('2d');
+                ctx.clearRect(0, 0, calibrationCanvas.width, calibrationCanvas.height);
+            }
+
+            function drawGazeTrail(style = 'live') {
+                const ctx = gazeCanvas.getContext('2d');
+                ctx.clearRect(0, 0, gazeCanvas.width, gazeCanvas.height);
+                if (!state.gazeTrail.length) return;
+                const color = style === 'summary' ? 'rgba(34, 211, 238, 0.88)' : 'rgba(34, 197, 94, 0.9)';
+                const radius = 8;
+                state.gazeTrail.forEach((point) => {
+                    const x = point.x * gazeCanvas.width;
+                    const y = point.y * gazeCanvas.height;
+                    ctx.beginPath();
+                    ctx.fillStyle = color;
+                    ctx.arc(x, y, radius, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.beginPath();
+                    ctx.strokeStyle = 'rgba(15, 23, 42, 0.65)';
+                    ctx.lineWidth = 3;
+                    ctx.arc(x, y, radius + 4, 0, Math.PI * 2);
+                    ctx.stroke();
+                });
+            }
+
+            function resetStats() {
+                state.stats.frames = 0;
+                state.gazeTrail = [];
+                drawGazeTrail();
+                updateHud();
+            }
+
+            async function captureFrameBlob() {
+                await ensureVideoReady();
+                const canvas = document.createElement('canvas');
+                canvas.width = videoEl.videoWidth;
+                canvas.height = videoEl.videoHeight;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(videoEl, 0, 0);
+                return new Promise((resolve, reject) => {
+                    canvas.toBlob((blob) => {
+                        if (blob) resolve(blob);
+                        else reject(new Error('Không thể chụp khung hình'));
+                    }, 'image/jpeg', 0.85);
+                });
+            }
+
+            async function requestCamera() {
+                log('Đang xin quyền camera...', 'info');
+                setChip('cameraStatusChip', 'active', 'Requesting');
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: { width: 1280, height: 720, facingMode: 'user' },
+                    audio: false
+                });
+                videoEl.srcObject = stream;
+                await videoEl.play();
+                state.mediaStream = stream;
+                state.cameraReady = true;
+                setChip('cameraStatusChip', 'success', 'Ready');
+                DOM.text('cameraStatusText').textContent = 'Camera đã sẵn sàng. Tiếp tục với bước hiệu chỉnh.';
+                document.getElementById('permissionOverlay').style.display = 'none';
+                stream.getVideoTracks().forEach((track) => {
+                    track.addEventListener('ended', () => {
+                        log('Camera track ended – vui lòng kiểm tra kết nối.', 'warn');
+                        handleCameraLost();
+                    });
+                });
+                await ensureVideoReady();
+                log('Camera permission granted ✔', 'success');
+            }
+
+            function handleCameraLost() {
+                state.cameraReady = false;
+                setChip('cameraStatusChip', 'warning', 'Lost');
+                DOM.text('cameraStatusText').textContent = 'Camera đã dừng. Kiểm tra thiết bị và nhấn “Start setup” lại.';
+                document.getElementById('permissionOverlay').style.display = 'grid';
+                updateTrackingBadge();
+            }
+
+            async function createSession() {
+                const payload = {
+                    config: {
+                        calibration_duration: 5,
+                        tracking_frequency: 12,
+                        min_detection_confidence: 0.5,
+                        min_tracking_confidence: 0.5
+                    },
+                    state: {
+                        language: state.language || 'vie'
+                    }
+                };
+
+                try {
+                    const response = await apiCall('/eyetracking/session', {
+                        method: 'POST',
+                        body: payload
+                    });
+                    if (!response?.success) {
+                        throw new Error(response?.message || 'Failed to initialize session');
+                    }
+                    log('Session created thành công (POST).', 'success');
+                    setChip('backendStatusChip', 'success', 'Connected');
+                    DOM.text('backendStatusText').textContent = 'Đang sử dụng API host: ' + (state.apiBase || 'relative / same-origin');
+                    return response;
+                } catch (error) {
+                    if (error?.status === 405 || error?.status === 404) {
+                        log('POST session bị chặn. Thử GET fallback...', 'warn');
+                        const params = new URLSearchParams();
+                        params.set('config', JSON.stringify(payload.config));
+                        params.set('state', JSON.stringify(payload.state));
+                        const fallback = await apiCall(`/eyetracking/session/init?${params.toString()}`, {
+                            method: 'GET',
+                            baseHint: error.baseUrl
+                        });
+                        if (!fallback?.success) {
+                            throw new Error(fallback?.message || 'GET fallback failed');
+                        }
+                        setChip('backendStatusChip', 'warning', 'Fallback');
+                        DOM.text('backendStatusText').textContent = 'Đang sử dụng GET fallback trên host: ' + (state.apiBase || error.baseUrl || 'unknown');
+                        log('Session created via GET fallback.', 'success');
+                        return fallback;
+                    }
+                    throw error;
+                }
+            }
+
+            async function apiCall(endpoint, options = {}) {
+                const {
+                    method = 'GET',
+                    body = null,
+                    formData = false,
+                    baseHint = null,
+                    silent = false
+                } = options;
+
+                const candidates = [];
+                if (baseHint) candidates.push(normalizeBaseUrl(baseHint));
+                if (state.apiBase) candidates.push(normalizeBaseUrl(state.apiBase));
+                candidates.push(...API_BASE_CANDIDATES);
+
+                const tried = new Set();
+                const errors = [];
+                let lastError = null;
+
+                for (const rawBase of candidates) {
+                    const base = normalizeBaseUrl(rawBase);
+                    if (base && tried.has(base)) continue;
+                    if (base) tried.add(base);
+
+                    const url = base ? `${base}${endpoint}` : endpoint;
+                    try {
+                        const fetchOptions = { method, headers: {} };
+                        if (body) {
+                            if (formData) {
+                                fetchOptions.body = body;
+                            } else {
+                                fetchOptions.headers['Content-Type'] = 'application/json';
+                                fetchOptions.body = JSON.stringify(body);
+                            }
+                        }
+                        const response = await fetch(url, fetchOptions);
+                        const text = await response.text();
+                        let data;
+                        try {
+                            data = text ? JSON.parse(text) : {};
+                        } catch {
+                            data = { raw: text };
+                        }
+                        if (response.ok) {
+                            if (!state.apiBase && base) state.apiBase = base;
+                            if (!silent) {
+                                log(`${method} ${endpoint} → ${response.status} via ${base || 'relative'}`, 'trace');
+                            }
+                            return data;
+                        }
+                        const error = new Error(data?.message || data?.detail || `HTTP ${response.status}`);
+                        error.status = response.status;
+                        error.data = data;
+                        error.baseUrl = base;
+                        throw error;
+                    } catch (err) {
+                        const message = err?.message || 'Unknown error';
+                        errors.push(`${base || 'relative'} → ${message}`);
+                        lastError = err instanceof Error ? err : new Error(message);
+                        lastError.baseUrl = err?.baseUrl || base;
+                        lastError.status = err?.status;
+                        continue;
+                    }
+                }
+
+                if (lastError) {
+                    lastError.attempts = errors;
+                    try {
+                        // Surface all attempts for easier debugging in UI
+                        log(`API call failed ${method} ${endpoint}. Attempts: ` + errors.join(' | '), 'error');
+                    } catch {}
+                    throw lastError;
+                }
+                throw new Error('API call failed with unknown error');
+            }
+
+            async function handleSetup() {
+                try {
+                    document.getElementById('startSetupBtn').disabled = true;
+                    setStepState('camera', 'active');
+                    await requestCamera();
+                    await createSession();
+                    state.sessionActive = true;
+                    setStepState('camera', 'done');
+                    setStepState('calibrate', 'active');
+                    DOM.text('calibrationStatusText').textContent = 'Bắt đầu hiệu chỉnh. Nhìn theo chấm đỏ khi xuất hiện.';
+                    setChip('calibrationStatusChip', 'active', 'Waiting');
+                    document.getElementById('calibrationBtn').disabled = false;
+                    document.getElementById('recalibrateBtn').disabled = false;
+                    updateHud();
+                } catch (error) {
+                    log(`Không thể khởi tạo: ${error.message}`, 'error');
+                    setStepState('camera', 'error');
+                    setChip('cameraStatusChip', 'error', 'Failed');
+                    DOM.text('cameraStatusText').textContent = error.message || 'Camera setup failed.';
+                    document.getElementById('startSetupBtn').disabled = false;
+                }
+            }
+
+            async function runCalibration() {
+                if (!state.cameraReady) {
+                    log('Camera chưa sẵn sàng. Thực hiện bước 1 trước.', 'warn');
+                    return;
+                }
+                try {
+                    document.getElementById('calibrationBtn').disabled = true;
+                    state.calibration.running = true;
+                    state.calibration.collected = 0;
+                    state.calibration.completed = false;
+                    updateCalibrationProgress();
+                    setStepState('calibrate', 'active');
+                    setChip('calibrationStatusChip', 'active', 'Running');
+                    DOM.text('calibrationStatusText').textContent = 'Đang hiển thị điểm chuẩn. Hãy nhìn chính xác vào từng điểm.';
+                    log('Calibration started…', 'info');
+
+                    const response = await apiCall('/eyetracking/calibrate', {
+                        method: 'POST',
+                        body: {}
+                    });
+                    if (!response?.success) {
+                        throw new Error(response?.message || 'Không thể bắt đầu calibration');
+                    }
+
+                    await ensureVideoReady();
+
+                    for (let i = 0; i < CALIBRATION_POINTS.length; i += 1) {
+                        const point = CALIBRATION_POINTS[i];
+                        drawCalibrationPoint(point);
+                        log(`Nhìn vào điểm ${i + 1}/5 (${point.label})`, 'info');
+                        await wait(1600);
+                        const blob = await captureFrameBlob();
+                        const formData = new FormData();
+                        formData.append('frame', blob, `calibration-${i + 1}.jpg`);
+                        formData.append('point_x', point.x.toFixed(4));
+                        formData.append('point_y', point.y.toFixed(4));
+                        const result = await apiCall('/eyetracking/calibrate/frame', {
+                            method: 'POST',
+                            body: formData,
+                            formData: true,
+                            silent: true
+                        });
+                        if (!result?.success) {
+                            log(`Calibration point ${i + 1} thất bại: ${result?.message || 'unknown'}`, 'warn');
+                        }
+                        state.calibration.collected += 1;
+                        updateCalibrationProgress();
+                    }
+
+                    clearCalibrationOverlay();
+                    state.calibration.running = false;
+                    state.calibration.completed = true;
+                    setChip('calibrationStatusChip', 'success', 'Complete');
+                    DOM.text('calibrationStatusText').textContent = 'Hiệu chỉnh thành công! Bạn có thể bắt đầu tracking.';
+                    setStepState('calibrate', 'done');
+                    setStepState('track', 'active');
+                    document.getElementById('startTrackingBtn').disabled = false;
+                    log('Calibration completed 🎯', 'success');
+                } catch (error) {
+                    clearCalibrationOverlay();
+                    state.calibration.running = false;
+                    setChip('calibrationStatusChip', 'error', 'Failed');
+                    setStepState('calibrate', 'error');
+                    DOM.text('calibrationStatusText').textContent = error.message || 'Calibration thất bại. Thử lại.';
+                    document.getElementById('calibrationBtn').disabled = false;
+                    log(`Calibration error: ${error.message}`, 'error');
+                }
+            }
+
+            function stopFrameLoop() {
+                if (state.tracking.loopHandle) {
+                    clearTimeout(state.tracking.loopHandle);
+                    state.tracking.loopHandle = null;
+                }
+            }
+
+            async function frameLoop() {
+                stopFrameLoop();
+                if (!state.tracking.active) return;
+                if (state.tracking.paused) {
+                    state.tracking.loopHandle = setTimeout(frameLoop, 250);
+                    return;
+                }
+                try {
+                    const blob = await captureFrameBlob();
+                    const formData = new FormData();
+                    formData.append('frame', blob, `frame-${Date.now()}.jpg`);
+                    const response = await apiCall('/eyetracking/frame', {
+                        method: 'POST',
+                        body: formData,
+                        formData: true,
+                        silent: true
+                    });
+                    handleFrameResponse(response);
+                } catch (error) {
+                    state.stats.errors += 1;
+                    log(`Frame error: ${error.message}`, 'warn');
+                    updateHud();
+                } finally {
+                    state.tracking.loopHandle = setTimeout(frameLoop, 160);
+                }
+            }
+
+            function handleFrameResponse(response) {
+                if (!response) return;
+                if (response.success && response.gaze) {
+                    state.stats.frames += 1;
+                    if (response.gaze.in_eye_contact_zone) state.stats.inZone += 1;
+                    else state.stats.outZone += 1;
+                    const point = {
+                        x: Math.min(1, Math.max(0, response.gaze.x ?? 0.5)),
+                        y: Math.min(1, Math.max(0, response.gaze.y ?? 0.5)),
+                        inZone: Boolean(response.gaze.in_eye_contact_zone)
+                    };
+                    state.gazeTrail.push(point);
+                    if (state.gazeTrail.length > 180) state.gazeTrail.shift();
+                    drawGazeTrail('live');
+                    if (response.session?.duration) {
+                        state.tracking.lastDuration = response.session.duration;
+                    }
+                    updateHud();
+                } else {
+                    const now = Date.now();
+                    if (response.state === 'no_face' && now - state.tracking.lastNoFaceLog > 5000) {
+                        log('Không phát hiện khuôn mặt. Hãy nhìn thẳng vào camera.', 'warn');
+                        state.tracking.lastNoFaceLog = now;
+                    }
+                    if (response.state === 'no_camera') {
+                        log('Không đọc được khung hình từ camera.', 'warn');
+                    }
+                }
+            }
+
+            async function startTracking() {
+                if (!state.calibration.completed) {
+                    log('Vui lòng hoàn tất calibration trước.', 'warn');
+                    return;
+                }
+                try {
+                    document.getElementById('startTrackingBtn').disabled = true;
+                    document.getElementById('stopTrackingBtn').disabled = false;
+                    document.getElementById('pauseTrackingBtn').disabled = false;
+                    setChip('trackingStatusChip', 'active', 'Running');
+                    DOM.text('trackingStatusText').textContent = 'Đang bắt đầu tracking…';
+                    resetStats();
+                    const response = await apiCall('/eyetracking/start', {
+                        method: 'POST',
+                        body: {}
+                    });
+                    if (!response?.success) {
+                        throw new Error(response?.message || 'Không thể bắt đầu tracking');
+                    }
+                    state.tracking.active = true;
+                    state.tracking.paused = false;
+                    state.tracking.startedAt = Date.now();
+                    // initialize centering aggregation
+                    state.centering.tally = {};
+                    state.centering.total = 0;
+                    if (state.centering.loopHandle) clearTimeout(state.centering.loopHandle);
+                    centeringLoop();
+                    updateHud();
+                    updateTrackingBadge();
+                    frameLoop();
+                    DOM.text('trackingStatusText').textContent = 'Tracking đang chạy. Sử dụng Pause nếu cần nghỉ.';
+                    setChip('trackingStatusChip', 'success', 'Live');
+                    log('Tracking started ✅', 'success');
+                } catch (error) {
+                    document.getElementById('startTrackingBtn').disabled = false;
+                    document.getElementById('stopTrackingBtn').disabled = true;
+                    document.getElementById('pauseTrackingBtn').disabled = true;
+                    setChip('trackingStatusChip', 'error', 'Failed');
+                    DOM.text('trackingStatusText').textContent = error.message || 'Start tracking failed.';
+                    log(`Tracking error: ${error.message}`, 'error');
+                }
+            }
+
+            function togglePause() {
+                if (!state.tracking.active) return;
+                state.tracking.paused = !state.tracking.paused;
+                document.getElementById('pauseTrackingBtn').textContent = state.tracking.paused ? 'Resume tracking' : 'Pause tracking';
+                if (state.tracking.paused) {
+                    log('Tracking paused.', 'info');
+                    setChip('trackingStatusChip', 'warning', 'Paused');
+                } else {
+                    log('Tracking resumed.', 'info');
+                    setChip('trackingStatusChip', 'success', 'Live');
+                }
+                updateTrackingBadge();
+                frameLoop();
+            }
+
+            async function stopTracking() {
+                stopFrameLoop();
+                if (!state.tracking.active) return;
+                try {
+                    await apiCall('/eyetracking/stop', { method: 'POST', body: {} });
+                    log('Tracking stopped.', 'info');
+                } catch (error) {
+                    log(`Stop tracking error: ${error.message}`, 'warn');
+                }
+                state.tracking.active = false;
+                state.tracking.paused = false;
+                state.tracking.lastDuration = state.tracking.lastDuration || (Date.now() - (state.tracking.startedAt || Date.now())) / 1000;
+                // finalize centering tracking
+                if (state.centering.loopHandle) {
+                    clearTimeout(state.centering.loopHandle);
+                    state.centering.loopHandle = null;
+                }
+                const entries = Object.entries(state.centering.tally).sort((a, b) => b[1] - a[1]);
+                if (entries.length) {
+                    const [key, count] = entries[0];
+                    DOM.text('centeringTopText').textContent = centeringDistLabel(key, count, state.centering.total);
+                    const top3 = entries.slice(0, 3).map(([k2, c2]) => centeringDistLabel(k2, c2, state.centering.total));
+                    DOM.text('centeringDistText').textContent = top3.join(' • ');
+                }
+                updateHud();
+                updateTrackingBadge();
+                setChip('trackingStatusChip', 'active', 'Stopped');
+                DOM.text('trackingStatusText').textContent = 'Tracking đã dừng. Lấy summary hoặc chạy lại nếu cần.';
+                document.getElementById('startTrackingBtn').disabled = false;
+                document.getElementById('stopTrackingBtn').disabled = true;
+                document.getElementById('pauseTrackingBtn').disabled = true;
+                document.getElementById('pauseTrackingBtn').textContent = 'Pause tracking';
+                document.getElementById('fetchSummaryBtn').disabled = false;
+                setStepState('track', 'done');
+                setStepState('analyze', 'active');
+            }
+
+            function formatDirection(direction) {
+                const map = {
+                    center: 'Center',
+                    forward: 'Center',
+                    left: 'Left',
+                    right: 'Right',
+                    up: 'Up',
+                    down: 'Down',
+                    unknown: 'Unknown'
+                };
+                return map[direction] || direction || '--';
+            }
+
+            function formatCenteringStatus(status) {
+                const s = (status || '').toString().toUpperCase();
+                if (state.language === 'eng') {
+                    if (s === 'PERFECT') return 'Perfect';
+                    if (s === 'GOOD') return 'Good';
+                    if (s === 'NEEDS_IMPROVEMENT') return 'Needs improvement';
+                    return 'Unknown';
+                }
+                // Vietnamese
+                if (s === 'PERFECT') return 'Chuẩn';
+                if (s === 'GOOD') return 'Tốt';
+                if (s === 'NEEDS_IMPROVEMENT') return 'Cần cải thiện';
+                return 'Không rõ';
+            }
+
+            function formatCenteringFeedback(key) {
+                const k = (key || '').toString().toUpperCase();
+                if (state.language === 'eng') {
+                    const map = {
+                        NONE: 'Nicely centered',
+                        TOO_HIGH: 'Head is too high — lower the camera or your seat slightly',
+                        TOO_LOW: 'Head is too low — raise the camera or your seat slightly',
+                        OFF_CENTER_LEFT: 'Too far left — adjust to the center',
+                        OFF_CENTER_RIGHT: 'Too far right — adjust to the center',
+                        TOO_CLOSE: 'Too close — move back a bit',
+                        TOO_FAR: 'Too far — move closer'
+                    };
+                    return map[k] || 'Adjust your position for better framing';
+                }
+                // Vietnamese
+                const mapVi = {
+                    NONE: 'Canh giữa rất tốt',
+                    TOO_HIGH: 'Đầu quá cao — hạ thấp camera hoặc ghế một chút',
+                    TOO_LOW: 'Đầu quá thấp — nâng camera hoặc ghế lên một chút',
+                    OFF_CENTER_LEFT: 'Lệch trái — dịch vào giữa',
+                    OFF_CENTER_RIGHT: 'Lệch phải — dịch vào giữa',
+                    TOO_CLOSE: 'Quá gần — lùi xa thêm chút',
+                    TOO_FAR: 'Quá xa — tiến gần hơn'
+                };
+                return mapVi[k] || 'Điều chỉnh vị trí để khung hình đẹp hơn';
+            }
+
+            function normalizeFeedbackKey(key) {
+                if (!key) return 'NONE';
+                return key.toString().toUpperCase();
+            }
+
+            function centeringDistLabel(k, count, total) {
+                const pct = total > 0 ? Math.round((count / total) * 100) : 0;
+                const text = formatCenteringFeedback(k);
+                return `${text} (${pct}%)`;
+            }
+
+            async function centeringLoop() {
+                // Run slower to minimize CPU usage
+                if (!state.tracking.active || state.tracking.paused || !state.centering?.enabled) {
+                    state.centering.loopHandle = setTimeout(centeringLoop, 600);
+                    return;
+                }
+                try {
+                    const blob = await captureFrameBlob();
+                    const formData = new FormData();
+                    formData.append('frame', blob, `center-${Date.now()}.jpg`);
+                    const res = await apiCall('/cv-position/frame', { method: 'POST', body: formData, formData: true, silent: true });
+                    if (res && res.status !== 'error' && res.feedback_key) {
+                        const k = normalizeFeedbackKey(res.feedback_key);
+                        state.centering.tally[k] = (state.centering.tally[k] || 0) + 1;
+                        state.centering.total += 1;
+
+                        // Update live chip and last result
+                        const label = formatCenteringStatus(res.status);
+                        if ((res.status || '').toUpperCase() === 'PERFECT') setChip('centeringChip', 'success', label);
+                        else if ((res.status || '').toUpperCase() === 'GOOD') setChip('centeringChip', 'warning', label);
+                        else setChip('centeringChip', 'error', label);
+                        DOM.text('centeringResultText').textContent = formatCenteringFeedback(res.feedback_key);
+
+                        // Update top and distribution (top 3)
+                        const entries = Object.entries(state.centering.tally).sort((a, b) => b[1] - a[1]);
+                        const top = entries[0];
+                        if (top) {
+                            const [key, count] = top;
+                            DOM.text('centeringTopText').textContent = centeringDistLabel(key, count, state.centering.total);
+                        }
+                        const top3 = entries.slice(0, 3).map(([k2, c2]) => centeringDistLabel(k2, c2, state.centering.total));
+                        DOM.text('centeringDistText').textContent = top3.length ? top3.join(' • ') : '--';
+                    }
+                } catch (e) {
+                    // ignore transient errors
+                } finally {
+                    state.centering.loopHandle = setTimeout(centeringLoop, 600);
+                }
+            }
+
+            async function runCenteringAnalysis() {
+                try {
+                    if (!state.cameraReady) {
+                        log('Camera chưa sẵn sàng. Thực hiện bước 1 trước.', 'warn');
+                        return;
+                    }
+                    setChip('centeringChip', 'active', 'Running');
+                    DOM.text('centeringStatusText').textContent = state.language === 'eng' ? 'Analyzing current frame…' : 'Đang phân tích khung hình hiện tại…';
+                    const blob = await captureFrameBlob();
+                    const formData = new FormData();
+                    formData.append('frame', blob, `center-${Date.now()}.jpg`);
+                    const res = await apiCall('/cv-position/frame', { method: 'POST', body: formData, formData: true });
+                    if (!res || res.status === 'error') {
+                        throw new Error(res?.data || 'API error');
+                    }
+                    const status = res.status;
+                    const feedback = res.feedback_key;
+                    const statusText = formatCenteringStatus(status);
+                    const feedbackText = formatCenteringFeedback(feedback);
+                    const label = `${statusText}`;
+                    if ((status || '').toUpperCase() === 'PERFECT') setChip('centeringChip', 'success', label);
+                    else if ((status || '').toUpperCase() === 'GOOD') setChip('centeringChip', 'warning', label);
+                    else setChip('centeringChip', 'error', label);
+                    DOM.text('centeringResultText').textContent = feedbackText;
+                    DOM.text('centeringStatusText').textContent = state.language === 'eng' ? 'Evaluation complete.' : 'Đánh giá hoàn tất.';
+                    log(`Centering: status=${status} feedback=${feedback}`, 'trace');
+                } catch (error) {
+                    setChip('centeringChip', 'error', 'Failed');
+                    DOM.text('centeringStatusText').textContent = error.message || (state.language === 'eng' ? 'Analysis failed' : 'Phân tích thất bại');
+                    log(`Centering analysis error: ${error.message}`, 'error');
+                }
+            }
+
+            async function runEmotionAnalysis() {
+                try {
+                    if (!state.cameraReady) {
+                        log('Camera chưa sẵn sàng. Thực hiện bước 1 trước.', 'warn');
+                        return;
+                    }
+                    setChip('emotionStatusChip', 'active', 'Running');
+                    DOM.text('emotionStatusText').textContent = 'Đang phân tích cảm xúc…';
+                    const blob = await captureFrameBlob();
+                    const formData = new FormData();
+                    formData.append('frame', blob, `emotion-${Date.now()}.jpg`);
+                    const endpoint = `/emotion/analyze?language=${encodeURIComponent(state.language || 'vie')}`;
+                    const res = await apiCall(endpoint, { method: 'POST', body: formData, formData: true });
+                    if (!res?.success) {
+                        throw new Error(res?.message || 'Emotion analyze failed');
+                    }
+                    // Unified schema first
+                    const emo = (res && typeof res === 'object') ? (res.emotion || res.analysis || {}) : {};
+                    const dominant = emo.dominant || emo.dominant_emotion || emo.top || '--';
+                    DOM.text('emotionDominant').textContent = String(dominant || '--');
+                    // Scores: normalize to percentages that sum to ~100% and always show '%'
+                    let scoresText = '--';
+                    const scores = emo.scores || emo.probabilities || emo.emotions || null;
+                    if (scores && typeof scores === 'object') {
+                        // Convert to numeric map first
+                        const kv = Object.entries(scores)
+                            .map(([k, v]) => [k, Number(v)])
+                            .filter(([, v]) => Number.isFinite(v));
+                        if (kv.length) {
+                            const rawSum = kv.reduce((s, [, v]) => s + v, 0);
+                            // Detect scale: if the sum is small (<=1.5), treat as probabilities; else already percent-ish
+                            const toPct = rawSum <= 1.5
+                                ? (v) => v * 100
+                                : (v) => v;
+                            const pctPairs = kv.map(([k, v]) => [k, toPct(v)]);
+                            const pctSum = pctPairs.reduce((s, [, v]) => s + v, 0) || 0;
+                            const normPairs = pctSum > 0
+                                ? pctPairs.map(([k, v]) => [k, (v * 100) / pctSum])
+                                : pctPairs;
+                            const top = normPairs
+                                .sort((a, b) => (b[1] || 0) - (a[1] || 0))
+                                .slice(0, 5);
+                            scoresText = top
+                                .map(([k, v]) => `${k}: ${Math.max(0, Math.min(100, v)).toFixed(1)}%`)
+                                .join(' • ');
+                        }
+                    }
+                    DOM.text('emotionScores').textContent = scoresText;
+                    // Fetch summary for unified insight field
+                    try {
+                        const s = await apiCall('/emotion/summary', { method: 'GET', silent: true });
+                        let insight = '--';
+                        if (s && typeof s === 'object') {
+                            const ea = s.emotionAnalysis && typeof s.emotionAnalysis === 'object' ? s.emotionAnalysis : null;
+                            const data = ea && typeof ea.data === 'object' ? ea.data : null;
+                            insight = (data && typeof data.insight === 'string' && data.insight) || (s.summary && s.summary.insight) || '--';
+                        }
+                        DOM.text('emotionInsight').textContent = insight || '--';
+                    } catch (e) {
+                        // If summary fetch fails, keep previous value
+                        DOM.text('emotionInsight').textContent = DOM.text('emotionInsight').textContent || '--';
+                    }
+                    setChip('emotionStatusChip', 'success', 'Done');
+                    log('Emotion analysis complete.', 'success');
+                } catch (error) {
+                    setChip('emotionStatusChip', 'error', 'Failed');
+                    DOM.text('emotionStatusText').textContent = error.message || 'Emotion analysis failed';
+                    log(`Emotion analysis error: ${error.message}`, 'error');
+                }
+            }
+
+            async function runBehaviorAnalysis() {
+                try {
+                    if (!state.cameraReady) {
+                        log('Camera chưa sẵn sàng. Thực hiện bước 1 trước.', 'warn');
+                        return;
+                    }
+                    setChip('behaviorStatusChip', 'active', 'Running');
+                    DOM.text('behaviorStatusText').textContent = 'Đang phân tích hành vi…';
+                    const blob = await captureFrameBlob();
+                    const formData = new FormData();
+                    formData.append('frame', blob, `behavior-${Date.now()}.jpg`);
+                    const endpoint = `/behavior/analyze?language=${encodeURIComponent(state.language || 'vie')}`;
+                    let res = null;
+                    try {
+                        res = await apiCall(endpoint, { method: 'POST', body: formData, formData: true });
+                    } catch (e) {
+                        // If absolute host failed and we had auto base discovery, attempt relative path fallback
+                        if (state.apiBase) {
+                            try {
+                                log('Primary host failed for /behavior/analyze, trying relative fallback…', 'warn');
+                                res = await apiCall(`/behavior/analyze?language=${encodeURIComponent(state.language || 'vie')}`, { method: 'POST', body: formData, formData: true, baseHint: '' });
+                            } catch (e2) {
+                                throw e;
+                            }
+                        } else {
+                            throw e;
+                        }
+                    }
+                    if (!res?.success) {
+                        throw new Error(res?.message || 'Behavior analyze failed');
+                    }
+                    // Prefer unified format: use behavior.prediction_meta.labelName when present
+                    const beh = (res && typeof res === 'object') ? (res.behavior || {}) : {};
+                    const meta = (beh && typeof beh === 'object') ? (beh.prediction_meta || beh.predictionMeta || {}) : {};
+                    const pred = (beh && typeof beh === 'object') ? (beh.prediction || {}) : {};
+                    const analysis = (res && typeof res === 'object') ? (res.analysis || {}) : {};
+
+                    // Determine dominant label text with fallbacks
+                    const rawDominant = analysis.dominant ?? pred.label ?? null;
+                    const dominantText = (meta.suppressed ? (state.language === 'vie' ? 'unknown' : 'unknown') : (meta.labelName || meta.labelCode || rawDominant || '--'));
+                    DOM.text('behaviorDominant').textContent = String(dominantText || '--');
+
+                    // Normalized IDs (original / compact / code)
+                    try {
+                        const labelOriginal = meta.labelOriginal ?? pred.label_original ?? null;
+                        const labelCompact = meta.labelCompact ?? pred.label_compact ?? null;
+                        const labelCode = meta.labelCode ?? analysis.labelCode ?? null;
+                        let idsText = '--';
+                        if (labelOriginal !== null || labelCompact !== null || labelCode !== null) {
+                            idsText = `original=${labelOriginal ?? '∅'} • compact=${labelCompact ?? '∅'} • code=${labelCode ?? '∅'}`;
+                            if (meta.suppressed) idsText += ' (suppressed)';
+                        }
+                        DOM.text('behaviorIds').textContent = idsText;
+                    } catch (_) {
+                        DOM.text('behaviorIds').textContent = '--';
+                    }
+
+                    // Scores: prefer analysis.scores if available
+                    let scoresText = '--';
+                    const scores = (analysis && analysis.scores) || beh.scores || beh.probabilities || null;
+                    if (scores && typeof scores === 'object') {
+                        const entries = Object.entries(scores)
+                            .sort((a,b)=> (Number(b[1])||0)-(Number(a[1])||0))
+                            .slice(0,5);
+                        scoresText = entries.map(([k,v])=>{
+                            const nv = Number(v);
+                            if (Number.isFinite(nv)) return `${k}: ${nv <= 1 ? (nv*100).toFixed(1)+'%' : nv.toFixed(1)}`;
+                            return `${k}: ${v}`;
+                        }).join(' • ');
+                    }
+                    DOM.text('behaviorScores').textContent = scoresText;
+
+                    // Insight: if we have labelName, render a friendly sentence; otherwise fall back to summary API
+                    const guards = (pred && typeof pred === 'object') ? (pred.guards || {}) : {};
+                    try {
+                        let insight = '--';
+                        if (meta.suppressed) {
+                                // Show candidate label even if suppressed
+                                const candidate = meta.labelName || meta.labelCode || rawDominant || '---';
+                                let pct = null;
+                                const idx = Number(meta.labelIndex);
+                                if (Number.isFinite(idx) && analysis && analysis.scores && analysis.scores[String(idx)] != null) {
+                                        const v = Number(analysis.scores[String(idx)]);
+                                        if (Number.isFinite(v)) pct = (v <= 1 ? v * 100 : v).toFixed(1) + '%';
+                                }
+                                insight = state.language === 'vie'
+                                    ? `Chưa đủ tín hiệu (${guards.lowMotion ? 'low-motion' : 'low-confidence'}). Ứng viên: ${candidate}${pct?` (${pct})`:''}. Thu thập thêm để xác nhận.`
+                                    : `Insufficient signal (${guards.lowMotion ? 'low-motion' : 'low-confidence'}). Candidate: ${candidate}${pct?` (${pct})`:''}. Collect more frames to confirm.`;
+                        } else if (meta && (meta.labelName || meta.labelCode)) {
+                            // Try to find the score for predicted index
+                            const idx = Number(meta.labelIndex);
+                            let pct = null;
+                            if (Number.isFinite(idx) && analysis && analysis.scores && analysis.scores[String(idx)] != null) {
+                                const v = Number(analysis.scores[String(idx)]);
+                                if (Number.isFinite(v)) pct = (v <= 1 ? v * 100 : v).toFixed(1) + '%';
+                            }
+                            const name = meta.labelName || meta.labelCode;
+                            insight = state.language === 'vie'
+                              ? `Hành vi chiếm ưu thế: ${name}${pct ? ` (${pct})` : ''}. Tiếp tục thu thập để có đánh giá sâu hơn.`
+                              : `Dominant behavior: ${name}${pct ? ` (${pct})` : ''}. Continue collecting for deeper assessment.`;
+                        } else {
+                            // Fallback to server summary if we can't build friendly text
+                            const s = await apiCall('/behavior/summary', { method: 'GET', silent: true });
+                            if (s && typeof s === 'object') {
+                                const ba = s.behaviorAnalysis && typeof s.behaviorAnalysis === 'object' ? s.behaviorAnalysis : null;
+                                const data = ba && typeof ba.data === 'object' ? ba.data : null;
+                                insight = (data && typeof data.insight === 'string' && data.insight) || (s.summary && s.summary.insight) || '--';
+                            }
+                        }
+                        DOM.text('behaviorInsight').textContent = insight || '--';
+                    } catch (e) {
+                        DOM.text('behaviorInsight').textContent = DOM.text('behaviorInsight').textContent || '--';
+                    }
+                    setChip('behaviorStatusChip', 'success', 'Done');
+                    log('Behavior analysis complete.', 'success');
+                } catch (error) {
+                    setChip('behaviorStatusChip', 'error', 'Failed');
+                    DOM.text('behaviorStatusText').textContent = error.message || 'Behavior analysis failed';
+                    log(`Behavior analysis error: ${error.message}`, 'error');
+                }
+            }
+
+            // -------------------------- Behavior video capture --------------------------
+            let lastBehaviorChunks = [];
+            let lastBehaviorBlob = null;
+            let lastBehaviorFrameBlob = null;
+
+            async function recordBehaviorClip() {
+                try {
+                    if (!state.cameraReady || !videoEl.srcObject) {
+                        log('Camera chưa sẵn sàng. Thực hiện Start setup trước.', 'warn');
+                        return;
+                    }
+                    const durationSec = Math.max(1, Math.min(10, parseInt(document.getElementById('behaviorRecordDuration').value || '3', 10)));
+                    setChip('behaviorVideoStatusChip', 'active', 'Recording');
+                    document.getElementById('recordBehaviorBtn').disabled = true;
+                    document.getElementById('sendBehaviorClipBtn').disabled = true;
+                    document.getElementById('annotateBehaviorFrameBtn').disabled = true;
+                    lastBehaviorChunks = [];
+                    lastBehaviorBlob = null;
+                    lastBehaviorFrameBlob = null;
+                    const stream = videoEl.srcObject;
+                    const recorder = new MediaRecorder(stream, { mimeType: 'video/webm;codecs=vp9' });
+                    recorder.ondataavailable = (e) => { if (e.data && e.data.size) lastBehaviorChunks.push(e.data); };
+                    recorder.onstop = async () => {
+                        lastBehaviorBlob = new Blob(lastBehaviorChunks, { type: 'video/webm' });
+                        // capture a single frame for optional skeleton annotation
+                        try {
+                            lastBehaviorFrameBlob = await captureFrameBlob();
+                        } catch {}
+                        document.getElementById('recordBehaviorBtn').disabled = false;
+                        document.getElementById('sendBehaviorClipBtn').disabled = false;
+                        document.getElementById('annotateBehaviorFrameBtn').disabled = false;
+                        setChip('behaviorVideoStatusChip', 'success', 'Ready');
+                        log(`Clip ghi xong (${(lastBehaviorBlob.size/1024).toFixed(1)} KB).`, 'success');
+                    };
+                    recorder.start();
+                    log(`Bắt đầu ghi clip ${durationSec}s...`, 'info');
+                    setTimeout(() => {
+                        if (recorder.state !== 'inactive') recorder.stop();
+                    }, durationSec * 1000);
+                } catch (error) {
+                    setChip('behaviorVideoStatusChip', 'error', 'Failed');
+                    document.getElementById('recordBehaviorBtn').disabled = false;
+                    log(`Record error: ${error.message}`, 'error');
+                }
+            }
+
+            async function sendBehaviorClip() {
+                try {
+                    if (!lastBehaviorBlob) {
+                        log('Chưa có clip để gửi. Ghi clip trước.', 'warn');
+                        return;
+                    }
+                    setChip('behaviorVideoStatusChip', 'active', 'Uploading');
+                    const strideVal = Math.max(1, parseInt(document.getElementById('behaviorStrideInput').value || '2', 10));
+                    const form = new FormData();
+                    form.append('video', lastBehaviorBlob, `behavior-${Date.now()}.webm`);
+                    const endpoint = `/behavior/pose/extract-and-predict?stride=${strideVal}`;
+                    const res = await apiCall(endpoint, { method: 'POST', body: form, formData: true });
+                    if (!res?.success) {
+                        throw new Error(res?.message || 'Predict failed');
+                    }
+                    const beh = (res && typeof res === 'object') ? (res.behavior || {}) : {};
+                    const seq = beh.sequence || res.sequence || {};
+                    const pred = beh.prediction || res.prediction || {};
+                    const label = (typeof pred.label !== 'undefined') ? pred.label : '--';
+                    const conf = (typeof pred.confidence === 'number') ? (pred.confidence <= 1 ? (pred.confidence*100).toFixed(1)+'%' : pred.confidence.toFixed(1)) : '--';
+                    const meta = beh.prediction_meta || beh.predictionMeta || {};
+                    const name = meta.labelName || pred.label_name || meta.labelCode || '--';
+                    const origId = meta.labelOriginal ?? pred.label_original;
+                    const compactId = meta.labelCompact ?? pred.label_compact;
+                    const code = meta.labelCode || '--';
+                    document.getElementById('behaviorVideoResult').textContent = `Label: ${label} • Name: ${name} • Confidence: ${conf}`;
+                    const extraIds = [];
+                    if (typeof origId !== 'undefined') extraIds.push(`orig=${origId}`);
+                    if (typeof compactId !== 'undefined') extraIds.push(`compact=${compactId}`);
+                    if (code && code !== '--') extraIds.push(`code=${code}`);
+                    if (extraIds.length) {
+                        document.getElementById('behaviorVideoResult').textContent += ` • ${extraIds.join(' | ')}`;
+                    }
+                    document.getElementById('behaviorSequenceShape').textContent = `Frames: ${seq.frames ?? '--'}, Features: ${seq.features ?? '--'}`;
+                    setChip('behaviorVideoStatusChip', 'success', 'Done');
+                    log('Behavior video predict complete.', 'success');
+                } catch (error) {
+                    setChip('behaviorVideoStatusChip', 'error', 'Failed');
+                    document.getElementById('behaviorVideoResult').textContent = error.message || 'Prediction failed';
+                    log(`Behavior video predict error: ${error.message}`, 'error');
+                }
+            }
+
+            async function annotateBehaviorFrame() {
+                try {
+                    if (!lastBehaviorFrameBlob) {
+                        log('Chưa có frame để annotate. Record clip trước.', 'warn');
+                        return;
+                    }
+                    setChip('behaviorVideoStatusChip', 'active', 'Annotating');
+                    const form = new FormData();
+                    form.append('frame', lastBehaviorFrameBlob, `frame-${Date.now()}.jpg`);
+                    const res = await fetch(`${state.apiBase || ''}/behavior/pose/annotate`, { method: 'POST', body: form });
+                    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                    const blob = await res.blob();
+                    const url = URL.createObjectURL(blob);
+                    const imgEl = document.getElementById('behaviorSkeletonPreview');
+                    imgEl.style.display = 'block';
+                    imgEl.src = url;
+                    setChip('behaviorVideoStatusChip', 'success', 'Annotated');
+                    log('Skeleton frame annotated.', 'success');
+                } catch (error) {
+                    setChip('behaviorVideoStatusChip', 'error', 'Failed');
+                    log(`Annotate error: ${error.message}`, 'error');
+                }
+            }
+
+            function buildInsight({ ratio, glanceCount, mainDirectionKey, distribution, backendText }) {
+                const sentences = [];
+                const normalizedRatio = Number.isFinite(ratio) ? Math.max(0, Math.min(100, Math.round(ratio))) : null;
+
+                if (normalizedRatio !== null) {
+                    let bandMessage;
+                    if (normalizedRatio >= 70) bandMessage = 'rất tốt, bạn duy trì giao tiếp ánh mắt ổn định.';
+                    else if (normalizedRatio >= 50) bandMessage = 'khá ổn, hãy tiếp tục giữ ánh mắt ở camera lâu hơn.';
+                    else if (normalizedRatio >= 30) bandMessage = 'cần cải thiện thêm để tạo kết nối mạnh mẽ hơn.';
+                    else bandMessage = 'cần luyện tập nhiều hơn để hạn chế việc đánh mất giao tiếp mắt.';
+                    sentences.push(`Tỷ lệ giao tiếp bằng mắt đạt ${normalizedRatio}%, ${bandMessage}`);
+                }
+
+                if (Number.isFinite(glanceCount)) {
+                    const count = Math.max(0, Math.round(glanceCount));
+                    let glanceMessage;
+                    if (count === 0) glanceMessage = 'Bạn hầu như không rời mắt khỏi khung nhìn.';
+                    else if (count <= 5) glanceMessage = `Số lần nhìn ra ngoài chỉ ${count} lần, vẫn trong mức kiểm soát tốt.`;
+                    else if (count <= 15) glanceMessage = `Có ${count} lần nhìn ra ngoài, hãy chú ý giảm bớt để giữ sự tập trung.`;
+                    else glanceMessage = `Số lần nhìn ra ngoài là ${count} lần, nên luyện tập thêm để tránh mất tương tác với khán giả.`;
+                    sentences.push(glanceMessage);
+                }
+
+                const directionLabels = {
+                    center: 'nhìn thẳng vào camera',
+                    forward: 'nhìn thẳng vào camera',
+                    left: 'thường nhìn sang trái',
+                    right: 'thường nhìn sang phải',
+                    up: 'có xu hướng nhìn lên trên',
+                    down: 'có xu hướng nhìn xuống dưới',
+                    unknown: null
+                };
+                const directionMessage = directionLabels[mainDirectionKey];
+                if (directionMessage) {
+                    sentences.push(`Hướng nhìn chính là ${directionMessage}.`);
+                }
+
+                if (distribution && typeof distribution === 'object') {
+                    const entries = Object.entries(distribution)
+                        .filter(([key, value]) => ['center', 'left', 'right', 'up', 'down'].includes(key) && Number.isFinite(value))
+                        .map(([key, value]) => ({ key, value: value || 0 }));
+                    if (entries.length) {
+                        entries.sort((a, b) => b.value - a.value);
+                        const top = entries[0];
+                        if (top && top.value > 0) {
+                            const percent = Math.round(top.value * 100);
+                            const labelMap = {
+                                center: 'nhìn thẳng',
+                                left: 'nhìn sang trái',
+                                right: 'nhìn sang phải',
+                                up: 'hướng mắt lên trên',
+                                down: 'hướng mắt xuống dưới'
+                            };
+                            const label = labelMap[top.key];
+                            if (label) {
+                                sentences.push(`Khu vực bạn tập trung nhiều nhất là ${label} (${percent}%).`);
+                            }
+                        }
+                    }
+                }
+
+                if (!sentences.length && backendText) {
+                    return backendText;
+                }
+
+                return sentences.length ? sentences.join(' ') : backendText || 'Chưa có dữ liệu để tạo insight.';
+            }
+
+            function renderSummary(summary) {
+                const fallbackText = 'Chưa có dữ liệu';
+                const analysis = summary?.eyeContactAnalysis;
+                if (!analysis) {
+                    DOM.text('eyeContactRatio').textContent = '--%';
+                    DOM.text('glanceCount').textContent = '--';
+                    DOM.text('mainDirection').textContent = '--';
+                    DOM.text('insightText').textContent = fallbackText;
+                    DOM.text('gazeDistributionText').textContent = fallbackText;
+                    DOM.text('eyeContactBar').style.width = '0%';
+                    return;
+                }
+                if (analysis.status !== 'success') {
+                    log(`Summary warning: ${analysis.reason || 'Không có dữ liệu phiên.'}`, 'warn');
+                    DOM.text('insightText').textContent = analysis.reason || fallbackText;
+                    return;
+                }
+                const data = analysis.data || {};
+                const rawRatio = (data.summary?.eyeContactRatio || 0) * 100;
+                const ratio = Math.max(0, Math.round(rawRatio));
+                const glanceCount = typeof data.summary?.glanceOutCount === 'number' ? data.summary.glanceOutCount : 0;
+                const mainDirectionRaw = data.summary?.mainDirection;
+                DOM.text('eyeContactRatio').textContent = `${ratio}%`;
+                DOM.text('eyeContactBar').style.width = `${ratio}%`;
+                DOM.text('glanceCount').textContent = Number.isFinite(glanceCount) ? Math.max(0, Math.round(glanceCount)) : '--';
+                const formattedDirection = formatDirection(mainDirectionRaw);
+                DOM.text('mainDirection').textContent = formattedDirection;
+                if (data.gazeDistribution) {
+                    const dist = data.gazeDistribution;
+                    const labels = state.language === 'eng'
+                        ? { center: 'Center', left: 'Left', right: 'Right', up: 'Up', down: 'Down' }
+                        : { center: 'Trung tâm', left: 'Trái', right: 'Phải', up: 'Lên', down: 'Xuống' };
+                    const text = `${labels.center} ${Math.round((dist.center || 0) * 100)}% • ${labels.left} ${Math.round((dist.left || 0) * 100)}% • ${labels.right} ${Math.round((dist.right || 0) * 100)}% • ${labels.up} ${Math.round((dist.up || 0) * 100)}% • ${labels.down} ${Math.round((dist.down || 0) * 100)}%`;
+                    DOM.text('gazeDistributionText').textContent = text;
+                } else {
+                    DOM.text('gazeDistributionText').textContent = fallbackText;
+                }
+                const backendInsight = typeof data.insight === 'string' ? data.insight.trim() : '';
+                const insight = backendInsight || buildInsight({
+                    ratio,
+                    glanceCount,
+                    mainDirectionKey: (mainDirectionRaw || '').toString().toLowerCase(),
+                    distribution: data.gazeDistribution,
+                });
+                DOM.text('insightText').textContent = insight;
+                if (Array.isArray(data.gazePlotData) && data.gazePlotData.length) {
+                    state.gazeTrail = data.gazePlotData.map((point) => ({
+                        x: Math.min(1, Math.max(0, point.x ?? 0.5)),
+                        y: Math.min(1, Math.max(0, point.y ?? 0.5)),
+                        inZone: Boolean(point.inZone)
+                    }));
+                    drawGazeTrail('summary');
+                }
+                setStepState('analyze', 'done');
+                log('Summary loaded thành công.', 'success');
+            }
+
+            async function fetchSummary() {
+                try {
+                    const summary = await apiCall('/eyetracking/summary', { method: 'GET' });
+                    renderSummary(summary);
+                } catch (error) {
+                    log(`Không thể lấy summary: ${error.message}`, 'error');
+                }
+            }
+
+            function drawEmotionBars(freq) {
+                const canvas = document.getElementById('emotionChartCanvas');
+                const ctx = canvas.getContext('2d');
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                // Resize to element width
+                const rect = canvas.getBoundingClientRect();
+                canvas.width = rect.width * (window.devicePixelRatio || 1);
+                canvas.height = 180 * (window.devicePixelRatio || 1);
+                ctx.setTransform(window.devicePixelRatio || 1, 0, 0, window.devicePixelRatio || 1, 0, 0);
+
+                const padding = { top: 14, right: 12, bottom: 30, left: 90 };
+                const plotW = canvas.width / (window.devicePixelRatio || 1) - padding.left - padding.right;
+                const plotH = canvas.height / (window.devicePixelRatio || 1) - padding.top - padding.bottom;
+                const entries = (freq && typeof freq === 'object')
+                    ? Object.entries(freq).sort((a,b)=> (b[1]||0)-(a[1]||0)).slice(0, 8)
+                    : [];
+                if (!entries.length) {
+                    ctx.fillStyle = 'rgba(203,213,225,0.7)';
+                    ctx.font = '14px Inter, sans-serif';
+                    ctx.fillText('--', padding.left, padding.top + 16);
+                    return;
+                }
+                const maxVal = Math.max(1, ...entries.map(([,v]) => Math.max(0, v || 0)));
+                const barGap = 8;
+                const barH = Math.max(10, (plotH - barGap * (entries.length - 1)) / entries.length);
+                entries.forEach(([label, value], i) => {
+                    const pct = Math.max(0, Math.min(100, Math.round(value || 0)));
+                    const x = padding.left;
+                    const y = padding.top + i * (barH + barGap);
+                    const w = (pct / 100) * plotW;
+                    // label
+                    ctx.fillStyle = 'rgba(203,213,225,0.85)';
+                    ctx.font = '12px Inter, sans-serif';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(label, 10, y + barH / 2);
+                    // bar bg
+                    ctx.fillStyle = 'rgba(148,163,184,0.18)';
+                    roundRect(ctx, x, y, plotW, barH, 6, true, false);
+                    // bar fg (gradient)
+                    const grad = ctx.createLinearGradient(x, y, x + w, y);
+                    grad.addColorStop(0, '#38bdf8');
+                    grad.addColorStop(1, '#60a5fa');
+                    ctx.fillStyle = grad;
+                    roundRect(ctx, x, y, w, barH, 6, true, false);
+                    // value text
+                    ctx.fillStyle = 'rgba(203,213,225,0.9)';
+                    ctx.font = '12px Inter, sans-serif';
+                    const valText = `${pct}%`;
+                    ctx.fillText(valText, x + w + 6, y + barH / 2);
+                });
+
+                function roundRect(ctx, x, y, w, h, r, fill, stroke) {
+                    if (w < 0) { x += w; w = Math.abs(w); }
+                    if (h < 0) { y += h; h = Math.abs(h); }
+                    const radius = Math.min(r, h/2, w/2);
+                    ctx.beginPath();
+                    ctx.moveTo(x + radius, y);
+                    ctx.lineTo(x + w - radius, y);
+                    ctx.quadraticCurveTo(x + w, y, x + w, y + radius);
+                    ctx.lineTo(x + w, y + h - radius);
+                    ctx.quadraticCurveTo(x + w, y + h, x + w - radius, y + h);
+                    ctx.lineTo(x + radius, y + h);
+                    ctx.quadraticCurveTo(x, y + h, x, y + h - radius);
+                    ctx.lineTo(x, y + radius);
+                    ctx.quadraticCurveTo(x, y, x + radius, y);
+                    ctx.closePath();
+                    if (fill) ctx.fill();
+                    if (stroke) ctx.stroke();
+                }
+            }
+
+            async function fetchScreening() {
+                try {
+                    setChip('screeningStatusChip', 'active', 'Fetching');
+                    DOM.text('screeningStatusText').textContent = 'Đang tổng hợp dữ liệu…';
+                    const res = await apiCall(`/screening/summary?language=${encodeURIComponent(state.language||'vie')}&include_insight=true`, { method: 'GET' });
+                    if (!res?.success) throw new Error(res?.message || 'Screening summary failed');
+                    const risk = res.risk || {};
+                    const idx = typeof risk.index === 'number' ? risk.index : 0;
+                    DOM.text('screeningRiskValue').textContent = `${Math.round(idx * 100)}%`;
+                    DOM.text('screeningRiskCategory').textContent = risk.category || '--';
+                    const eye = (res.modules && res.modules.eyeTracking) || {};
+                    const eyePct = Math.round((eye.eyeContactRatio || 0) * 100);
+                    const glance = eye.glanceOutCount || 0;
+                    DOM.text('screeningEyeStat').textContent = `${eyePct}% • ${glance} glances`;
+                    const freq = (res.charts && res.charts.emotionFrequency) || {};
+                    drawEmotionBars(freq);
+                    // Show LLM insight if provided
+                    const insight = (risk && typeof risk.llmInsight === 'string') ? risk.llmInsight : '--';
+                    DOM.text('screeningLlmInsight').textContent = insight || '--';
+                    // Derive top emotion
+                    const entries = Object.entries(freq || {}).sort((a,b)=> (b[1]||0)-(a[1]||0));
+                    const topEmotion = entries.length ? `${entries[0][0]} (${Math.round(entries[0][1]||0)}%)` : '--';
+                    DOM.text('screeningTopEmotion').textContent = topEmotion;
+                    // Derive top behavior
+                    const beh = (res.modules && res.modules.behavior && res.modules.behavior.distribution) || {};
+                    const behEntries = Object.entries(beh).sort((a,b)=> (b[1]||0)-(a[1]||0));
+                    const topBehavior = behEntries.length ? `${behEntries[0][0]} (${behEntries[0][1]})` : '--';
+                    DOM.text('screeningTopBehavior').textContent = topBehavior;
+                    setChip('screeningStatusChip', 'success', 'Ready');
+                    DOM.text('screeningStatusText').textContent = 'Đã tổng hợp kết quả sàng lọc.';
+                    log('Screening summary loaded.', 'success');
+                } catch (error) {
+                    setChip('screeningStatusChip', 'error', 'Failed');
+                    DOM.text('screeningStatusText').textContent = error.message || 'Không thể tổng hợp dữ liệu.';
+                    log(`Screening error: ${error.message}`, 'error');
+                }
+            }
+
+            async function exportScreeningPdf() {
+                try {
+                    setChip('screeningStatusChip', 'active', 'Exporting');
+                    const url = `${state.apiBase || ''}/screening/export?language=${encodeURIComponent(state.language||'vie')}`;
+                    const response = await fetch(url, { method: 'GET' });
+                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                    const blob = await response.blob();
+                    const blobUrl = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = blobUrl;
+                    a.download = `screening_report_${Date.now()}.pdf`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(blobUrl);
+                    setChip('screeningStatusChip', 'success', 'Exported');
+                    log('PDF exported and downloaded.', 'success');
+                } catch (error) {
+                    setChip('screeningStatusChip', 'error', 'Export failed');
+                    log(`Export PDF error: ${error.message}`, 'error');
+                }
+            }
+
+            function stopStream() {
+                if (state.mediaStream) {
+                    state.mediaStream.getTracks().forEach((track) => track.stop());
+                    state.mediaStream = null;
+                }
+                videoEl.srcObject = null;
+                state.cameraReady = false;
+                document.getElementById('permissionOverlay').style.display = 'grid';
+            }
+
+            async function resetSession() {
+                stopFrameLoop();
+                if (state.centering.loopHandle) {
+                    clearTimeout(state.centering.loopHandle);
+                    state.centering.loopHandle = null;
+                }
+                try {
+                    await apiCall('/eyetracking/session', { method: 'DELETE' });
+                    log('Session cleanup gửi lên server.', 'trace');
+                } catch (error) {
+                    log(`Cleanup warning: ${error.message}`, 'warn');
+                }
+                stopStream();
+                state.sessionActive = false;
+                state.calibration.collected = 0;
+                state.calibration.completed = false;
+                state.centering.tally = {};
+                state.centering.total = 0;
+                const centeringChipEl = document.getElementById('centeringChip');
+                centeringChipEl.className = 'chip';
+                centeringChipEl.textContent = 'Idle';
+                DOM.text('centeringStatusText').textContent = 'Đánh giá nhanh vị trí khuôn mặt so với Golden Zone (1 frame từ webcam).';
+                DOM.text('centeringResultText').textContent = 'Chưa có kết quả.';
+                DOM.text('centeringTopText').textContent = '--';
+                DOM.text('centeringDistText').textContent = '--';
+                updateCalibrationProgress();
+                setChip('calibrationStatusChip', 'active', 'Ready');
+                document.getElementById('calibrationBtn').disabled = true;
+                document.getElementById('recalibrateBtn').disabled = true;
+                document.getElementById('startTrackingBtn').disabled = true;
+                document.getElementById('pauseTrackingBtn').disabled = true;
+                document.getElementById('stopTrackingBtn').disabled = true;
+                document.getElementById('fetchSummaryBtn').disabled = true;
+                document.getElementById('pauseTrackingBtn').textContent = 'Pause tracking';
+                setChip('cameraStatusChip', 'active', 'Await');
+                DOM.text('cameraStatusText').textContent = 'Bấm “Start setup” để xin quyền camera.';
+                DOM.text('trackingStatusText').textContent = 'Tracking sẽ khả dụng sau khi hiệu chỉnh.';
+                setChip('trackingStatusChip', 'active', 'Idle');
+                resetStats();
+                setStepState('camera', 'active');
+                setStepState('calibrate', 'idle');
+                setStepState('track', 'idle');
+                setStepState('analyze', 'idle');
+                log('Session reset hoàn tất.', 'info');
+                document.getElementById('startSetupBtn').disabled = false;
+            }
+
+            function applyApiHost(event) {
+                event.preventDefault();
+                const host = normalizeBaseUrl(document.getElementById('apiHostInput').value);
+                if (host) {
+                    state.apiBase = host;
+                    setChip('backendStatusChip', 'active', 'Manual');
+                    DOM.text('backendStatusText').textContent = 'Đang sử dụng host tuỳ chỉnh: ' + host;
+                    log(`Manual API host applied: ${host}`, 'info');
+                } else {
+                    state.apiBase = null;
+                    setChip('backendStatusChip', 'active', 'Auto');
+                    DOM.text('backendStatusText').textContent = 'Đang quay lại chế độ auto-discovery.';
+                    log('API host reset to auto detection.', 'info');
+                }
+            }
+
+            function init() {
+                // Initialize language select
+                const langSel = document.getElementById('languageSelect');
+                setLanguage(langSel?.value || 'vie');
+                langSel?.addEventListener('change', (e) => {
+                    setLanguage(e.target.value);
+                });
+                document.getElementById('startSetupBtn').addEventListener('click', handleSetup);
+                document.getElementById('calibrationBtn').addEventListener('click', runCalibration);
+                document.getElementById('recalibrateBtn').addEventListener('click', runCalibration);
+                document.getElementById('startTrackingBtn').addEventListener('click', startTracking);
+                document.getElementById('pauseTrackingBtn').addEventListener('click', togglePause);
+                document.getElementById('stopTrackingBtn').addEventListener('click', stopTracking);
+                document.getElementById('fetchSummaryBtn').addEventListener('click', fetchSummary);
+                document.getElementById('resetBtn').addEventListener('click', resetSession);
+                document.getElementById('apiHostForm').addEventListener('submit', applyApiHost);
+                document.getElementById('runCenteringBtn').addEventListener('click', runCenteringAnalysis);
+                document.getElementById('runEmotionBtn').addEventListener('click', runEmotionAnalysis);
+                const runBehaviorAnalyzeBtn = document.getElementById('runBehaviorAnalyzeBtn');
+                if (runBehaviorAnalyzeBtn) runBehaviorAnalyzeBtn.addEventListener('click', runBehaviorAnalysis);
+                document.getElementById('fetchScreeningBtn').addEventListener('click', fetchScreening);
+                document.getElementById('exportScreeningPdfBtn').addEventListener('click', exportScreeningPdf);
+                window.addEventListener('resize', () => resizeOverlays());
+                videoEl.addEventListener('loadedmetadata', () => resizeOverlays());
+                log('Eye Tracking Studio đã sẵn sàng. Bắt đầu với bước 1.', 'info');
+            }
+
+            init();
+        })();
+    </script>
+</body>
+</html>
